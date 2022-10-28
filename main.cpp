@@ -139,7 +139,7 @@ void leerLista(vector <nodo> lista){
     int count = lista.size();
     for (int i = 0; i < count; i++)
     {  
-        cout << "id:" << lista[i].id << "\n";
+        cout << "id:\t" << lista[i].id << "\n";
         cout << "tipo:\t" << lista[i].tipo << "\n";
         cout << "x:\t" << lista[i].x << "\n";
         cout << "y:\t" << lista[i].y << "\n";
@@ -148,10 +148,10 @@ void leerLista(vector <nodo> lista){
 }
 
 void leerNodo (nodo Node) {
-    cout << "id:" << Node.id << "\n";
-    cout << "tipo:" << Node.tipo << "\n";
-    cout << "x:" << Node.x << "\n";
-    cout << "y:" << Node.y << "\n";
+    cout << "id:\t" << Node.id << "\n";
+    cout << "tipo:\t" << Node.tipo << "\n";
+    cout << "x:\t" << Node.x << "\n";
+    cout << "y:\t" << Node.y << "\n";
     cout << "demanda:" << Node.demanda << "\n\n";
 }
 
@@ -185,8 +185,8 @@ int main(int arcg, char* argv[]) {
     cout << "=========== Deposito ===========\n";
     leerNodo(deposito);
 
-    cout << "Linehauls: " << listaLinehaul.size() << "\n";
-    cout << "Backhauls: " << listaBackhaul.size() << "\n\n";
+    cout << "Linehauls: \t" << listaLinehaul.size() << "\n";
+    cout << "Backhauls: \t" << listaBackhaul.size() << "\n\n";
 
     cout << "=========== Nodos ===========\n";
     if (res==0) {
