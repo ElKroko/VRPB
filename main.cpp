@@ -37,7 +37,7 @@ struct nodo{
     int tipo;
     float x;
     float y;
-    float demanda;
+    float demanda = 0.0;
     int visitado = 0;
 };
 
@@ -71,7 +71,7 @@ float distancia(nodo a, nodo b){
     return distancia;
 }
 
-int lecturaArchivos(int vehiculos, float capacidad, char* argv[], nodo& deposito, vector<nodo>& listaLinehaul, vector<nodo>& listaBackhaul) {
+int lecturaArchivos(int& vehiculos, float& capacidad, char* argv[], nodo& deposito, vector<nodo>& listaLinehaul, vector<nodo>& listaBackhaul) {
     // apertura de archivo y lectura
     FILE * instancia;
     int clientes;
@@ -88,13 +88,12 @@ int lecturaArchivos(int vehiculos, float capacidad, char* argv[], nodo& deposito
 
     fscanf(instancia, "%d %d %f %f",&temptipo, &tempid, &tempx, &tempy);
 
-    cout << "deposito id:" << tempid << '\n';
     deposito.id = tempid;
     deposito.tipo = temptipo;
     deposito.x = tempx;
     deposito.y = tempy;
 
-    for (int i = 0; i < clientes-2; i++){
+    for (int i = 0; i < clientes-1; i++){
         fscanf(instancia, "%d %d %f %f",&temptipo, &tempid, &tempx, &tempy);
         
         switch (temptipo)
@@ -122,13 +121,13 @@ int lecturaArchivos(int vehiculos, float capacidad, char* argv[], nodo& deposito
 
     fscanf(instancia, "%d %f", &vehiculos, &capacidad);
 
-    for (int j = 0; j < cantL-1; j++){
+    for (int j = 0; j < cantL; j++){
         fscanf(instancia, "%d %f",&tempid, &tempdemanda);
         listaLinehaul[j].demanda = tempdemanda;
     }
 
     
-    for (int k = 0; k < cantB-1; k++){
+    for (int k = 0; k < cantB; k++){
         fscanf(instancia, "%d %f",&tempid, &tempdemanda);
         listaBackhaul[k].demanda = tempdemanda;
     }
@@ -136,21 +135,29 @@ int lecturaArchivos(int vehiculos, float capacidad, char* argv[], nodo& deposito
     return res;
 }
 
-int leerLista(vector <nodo> lista){
+void leerLista(vector <nodo> lista){
     int count = lista.size();
     for (int i = 0; i < count; i++)
-    {
+    {  
         cout << "id:" << lista[i].id << "\n";
         cout << "tipo:\t" << lista[i].tipo << "\n";
         cout << "x:\t" << lista[i].x << "\n";
         cout << "y:\t" << lista[i].y << "\n";
+        cout << "demanda:" << lista[i].demanda << "\n\n";
     }
-    return 0;
+}
+
+void leerNodo (nodo Node) {
+    cout << "id:" << Node.id << "\n";
+    cout << "tipo:" << Node.tipo << "\n";
+    cout << "x:" << Node.x << "\n";
+    cout << "y:" << Node.y << "\n";
+    cout << "demanda:" << Node.demanda << "\n\n";
 }
 
 
 int main(int arcg, char* argv[]) {
-    cout << "Hola, estoy programando en c++! \n";
+    cout << "Hola, estoy programando en c++!\n";
 
     if (arcg!=2){
         cout << "Ingrese un archivo!\n";
@@ -174,17 +181,19 @@ int main(int arcg, char* argv[]) {
 
     int res = lecturaArchivos(vehiculos, capacidad, argv, deposito, listaLinehaul, listaBackhaul);
 
-    cout << "id deposito " << deposito.id << "\n";
+    
+    cout << "=========== Deposito ===========\n";
+    leerNodo(deposito);
 
-    cout << "Linehaul clients: "<< listaLinehaul.size() << "\n";
-    cout << "Backhaul clients: "<< listaBackhaul.size() << "\n";
+    cout << "Linehauls: " << listaLinehaul.size() << "\n";
+    cout << "Backhauls: " << listaBackhaul.size() << "\n\n";
 
-
-    cout << "llegue aqui! 2 con res:" << res << "\n";
+    cout << "=========== Nodos ===========\n";
     if (res==0) {
-        res = leerLista(listaLinehaul);
-        res = leerLista(listaBackhaul);
+        leerLista(listaLinehaul);
+        leerLista(listaBackhaul);
     }
+
 
 
 
