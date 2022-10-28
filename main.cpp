@@ -81,8 +81,10 @@ int lecturaArchivos(int vehiculos, float capacidad, char* argv[], nodo deposito,
 
     fscanf(instancia, "%d", &clientes);
 
-    int tempid, temptipo, tempdemanda;
-    float tempx, tempy;
+    int tempid, temptipo;
+    float tempx, tempy, tempdemanda;
+
+    
 
     fscanf(instancia, "%d %d %f %f",&temptipo, &tempid, &tempx, &tempy);
 
@@ -142,7 +144,7 @@ int leerLista(vector <nodo> lista){
         cout << "x:\t" << lista[i].x << "\n";
         cout << "y:\t" << lista[i].y << "\n";
     }
-    
+    return 0;
 }
 
 
@@ -155,33 +157,35 @@ int main(int arcg, char* argv[]) {
 
     int clientes, vehiculos;
     int nVisitados = 0;
+    float capacidad;
     
+    cout << "llegue aqui!";
     
     // contador de tiempo!
     int maxTiempo = 180;
     unsigned t0, t1;
     t0 = clock();
 
+    int res = lecturaArchivos(vehiculos, capacidad, argv, deposito, listaLinehaul, listaBackhaul);
 
-
-
-
-
-    while(nVisitados < clientes){
-
-        // condicion de termino: tiempo maximo
-        t1 = clock();
-        double tiempo = (double(t1-t0)/CLOCKS_PER_SEC);
-        if (tiempo > maxTiempo) {
-            cout << "Tiempo limite!";
-            break;
-        }
-
-        
-        
-
-
+    if (res==0) {
+        res = leerLista(listaLinehaul);
+        res = leerLista(listaBackhaul);
     }
+
+
+
+
+    // while(nVisitados < clientes){
+
+    //     // condicion de termino: tiempo maximo
+    //     t1 = clock();
+    //     double tiempo = (double(t1-t0)/CLOCKS_PER_SEC);
+    //     if (tiempo > maxTiempo) {
+    //         cout << "Tiempo limite!";
+    //         break;
+    //     }
+    // }
 
     return 0;
 }
