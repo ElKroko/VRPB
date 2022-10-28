@@ -71,7 +71,7 @@ float distancia(nodo a, nodo b){
     return distancia;
 }
 
-int lecturaArchivos(int vehiculos, float capacidad, char* argv[], nodo deposito, vector<nodo> listaLinehaul, vector<nodo> listaBackhaul) {
+int lecturaArchivos(int vehiculos, float capacidad, char* argv[], nodo& deposito, vector<nodo>& listaLinehaul, vector<nodo>& listaBackhaul) {
     // apertura de archivo y lectura
     FILE * instancia;
     int clientes;
@@ -88,6 +88,7 @@ int lecturaArchivos(int vehiculos, float capacidad, char* argv[], nodo deposito,
 
     fscanf(instancia, "%d %d %f %f",&temptipo, &tempid, &tempx, &tempy);
 
+    cout << "deposito id:" << tempid << '\n';
     deposito.id = tempid;
     deposito.tipo = temptipo;
     deposito.x = tempx;
@@ -113,7 +114,7 @@ int lecturaArchivos(int vehiculos, float capacidad, char* argv[], nodo deposito,
             });
             break;
         default:
-            cout << "Invalid Tipo!";
+            cout << "Invalid Tipo!\n";
             break;
         }
 
@@ -131,8 +132,8 @@ int lecturaArchivos(int vehiculos, float capacidad, char* argv[], nodo deposito,
         fscanf(instancia, "%d %f",&tempid, &tempdemanda);
         listaBackhaul[k].demanda = tempdemanda;
     }
-
-    return 0;
+    int res = 0;
+    return res;
 }
 
 int leerLista(vector <nodo> lista){
@@ -149,7 +150,12 @@ int leerLista(vector <nodo> lista){
 
 
 int main(int arcg, char* argv[]) {
-    cout << "Hola, estoy programando en c++!";
+    cout << "Hola, estoy programando en c++! \n";
+
+    if (arcg!=2){
+        cout << "Ingrese un archivo!\n";
+        exit(1);
+    }
     
     vector <nodo> listaLinehaul;
     vector <nodo> listaBackhaul;
@@ -159,7 +165,7 @@ int main(int arcg, char* argv[]) {
     int nVisitados = 0;
     float capacidad;
     
-    cout << "llegue aqui!";
+    
     
     // contador de tiempo!
     int maxTiempo = 180;
@@ -168,6 +174,13 @@ int main(int arcg, char* argv[]) {
 
     int res = lecturaArchivos(vehiculos, capacidad, argv, deposito, listaLinehaul, listaBackhaul);
 
+    cout << "id deposito " << deposito.id << "\n";
+
+    cout << "Linehaul clients: "<< listaLinehaul.size() << "\n";
+    cout << "Backhaul clients: "<< listaBackhaul.size() << "\n";
+
+
+    cout << "llegue aqui! 2 con res:" << res << "\n";
     if (res==0) {
         res = leerLista(listaLinehaul);
         res = leerLista(listaBackhaul);
