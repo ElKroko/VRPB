@@ -7,7 +7,6 @@
 
 using namespace std;
 
-int THRESHOLD = 100;
 
 /*
 =========== Formato de Entrada ==============
