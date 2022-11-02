@@ -224,6 +224,21 @@ bool esta_en_ruta_posible (vector <tuple <float, vector<nodo>>> rutasPosibles, n
     return false;
 }
 
+void sacar_nodo(vector <nodo>& lista, nodo nodo_a_sacar){
+    int id = nodo_a_sacar.id;
+    int count = lista.size();
+
+    for (int i = 0; i < count; i++)
+    {
+        if (id == lista[i].id)
+        {
+            lista.erase(lista.begin() + i);
+        }
+        
+    }
+
+}
+
 
 vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo, vector<nodo>& ruta_original){
 
@@ -255,14 +270,14 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
 
             if (esta_en_ruta(ruta, nodoActual))
             {
-                cout << "Ya esta en ruta el: "<< nodoActual.id <<"\n";
+                // cout << "Ya esta en ruta el: "<< nodoActual.id <<"\n";
                 L_actual++;
                 continue;
             }
 
             if (esta_en_ruta_posible(rutasPosibles, nodoActual))
             {
-                cout << "Ya esta en ruta posible el: "<< nodoActual.id <<"\n";
+                // cout << "Ya esta en ruta posible el: "<< nodoActual.id <<"\n";
                 L_actual++;
                 continue;
             }
@@ -288,7 +303,7 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                     if (!esta_en_ruta(ruta, nodoActual))
                     {
                         nodoInstanciar = nodoActual;
-                        cout << "Nodo a instanciar min distancia: " << nodoInstanciar.id << endl;
+                        // cout << "Nodo a instanciar min distancia: " << nodoInstanciar.id << endl;
                         min_distancia = distancia_calculada;
                     }
                 }
@@ -309,8 +324,8 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
             if (nodoInstanciar.demanda + vehiculo.demanda < capacidad)
             {   
                 if (!esta_en_ruta(ruta, nodoInstanciar) && !esta_en_ruta_posible(rutasPosibles, nodoInstanciar)){
-                    string input;
-                    cin >> input;
+                    // string input;
+                    // cin >> input;
                     cout << "...pero aun queda espacio!" << "\n";
                     cout << "Nodo_instanciar: " << nodoInstanciar.id << "\n";
                     cout << "Distancia entre nodos: "<< min_distancia << endl;
@@ -341,8 +356,8 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                     cout << "Demanda Vehiculo: " << vehiculo.demanda << "\n";
                     cout << "Agregado a rutas posibles!" << endl;
 
-                    string xd;
-                    cin >> xd;
+                    // string xd;
+                    // cin >> xd;
 
                     // Se reinician los parametros para volver a iniciar backtracking.
                     alto --;
@@ -368,6 +383,7 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
 
 
                 leerRuta(ruta);
+                cout << "\n";
                 // Se almacena la solucion con su distancia total
                 tuple <float, vector<nodo>> resultado;
                 resultado = make_tuple(distancia_total, ruta);
@@ -375,8 +391,8 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                 cout << "Distancia total: " << distancia_total << "\n";
                 cout << "Agregado a rutas posibles!" << endl;
 
-                string xd;
-                cin >> xd;
+                // string xd;
+                // cin >> xd;
 
                 // Se reinician los parametros para volver a iniciar backtracking.
                 alto --;
@@ -438,8 +454,8 @@ vector <vector <nodo>> Rutas_Vehiculos(int maxTiempo, vector <nodo> listaLinehau
     vector <vector <nodo>> rutas;
     // constantes para la iteracion
     
-    // int Q = listaVehiculos.size();
-    int Q = 1;
+    int Q = listaVehiculos.size();
+    // int Q = 1;
     int i = 0;
     unsigned t0, t1;
     t0 = clock();
@@ -454,10 +470,21 @@ vector <vector <nodo>> Rutas_Vehiculos(int maxTiempo, vector <nodo> listaLinehau
         vector<nodo> rutaL = Backtracking(listaLinehaul, deposito, vehiculo, ruta);
         leerRuta(rutaL);
         // eliminar los nodos de la ruta en linehaul
+
+        for (int j = 0; j < rutaL.size(); j++)
+        {
+            sacar_nodo(listaLinehaul, rutaL[j]);
+        }
+        
+
          // cout << "Ruta: " << ruta << endl;
         if (!listaBackhaul.empty())
         {
             rutaFinal = Backtracking(listaBackhaul, deposito, vehiculo, ruta);
+            for (int k = 0; k < rutaFinal.size(); k++)
+            {
+                sacar_nodo(listaLinehaul, rutaL[k]);
+            }
         }else{
             rutaFinal = rutaL;
         }
