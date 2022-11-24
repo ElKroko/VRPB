@@ -5,7 +5,13 @@
 #include <time.h>
 #include <tuple>
 
+// Debugging
+#include <chrono>
+#include <thread>
+
 using namespace std;
+using namespace std::this_thread; // sleep_for, sleep_until
+using namespace std::chrono; // nanoseconds, system_clock, seconds
 
 
 /*
@@ -45,7 +51,7 @@ struct nodo{
 struct Vehiculo {
     int id;
     float capacidad;
-    vector <int> ruta;
+    vector <int> ruta;          
     int clientesAtendidos;
     float distanciaRecorrida;
     float demanda = 0.0;
@@ -60,6 +66,11 @@ struct Vehiculo {
 
 
 // struct para hacer variable?!
+// struct variable {
+//     auto nodo;
+//     bool estaenrutaposible;
+// };
+
 
 // Funcion para calcular distancia entre 2 nodos de forma euclideana.
 // recibe 2 nodos y retorna un float que corresponde a la distancia calculada
@@ -186,6 +197,7 @@ void leerRuta (vector <nodo> ruta){
 }
 
 
+// Funcion para determinar si el nodo se encuentra en la ruta que queremos agregar
 bool esta_en_ruta(vector <nodo> ruta, nodo actual){
     int id = actual.id;
     int count = ruta.size();
@@ -202,25 +214,60 @@ bool esta_en_ruta(vector <nodo> ruta, nodo actual){
     
 }
 
-bool esta_en_ruta_posible (vector <tuple <float, vector<nodo>>> rutasPosibles, nodo actual){
+// Funcion para determinar si el nodo se encuentra en:
+// Una ruta viable donde me quedo sin capacidad!
+
+bool esta_en_ruta_posible (vector <tuple <float, vector<nodo>>> rutasPosibles, nodo actual, vector <nodo> rutaActual){
+    // Esta funcion debe ver si la configuracion de la ruta que yo estoy elaborando con el nodo actual
+    // ya esta en las rutas posibles
+
     int id = actual.id;
     int count = rutasPosibles.size();
     vector <nodo> ruta;
+
+    vector <nodo> rutaOg = rutaActual;
+    rutaOg.push_back(actual);               // Se crea copia para guardar la ruta que estamos buscando
+
+    // Buscar que las rutas hagan match, tanto en la posicion como el ID en esa posicion.
+
+    int largo_ruta = rutaOg.size();
+    int pos_en_ruta = 0;
 
     for (int i = 0; i < count; i++)
     {
         ruta = get<1>(rutasPosibles[i]);
         int count2 = ruta.size();
-        for (int j = 0; j < count2; j++)
+
+        if (largo_ruta != count2)
         {
-            if (id == ruta[j].id)
+            // Los largos de las rutas son distintos, no es la misma config
+            continue; // siguiente ruta de posibles
+        }
+        else{
+            // buscamos que coincidan los id en cada posicion de la ruta
+            int j = 0;
+            for (j = 0; j < count2; j++)
             {
+                if (ruta[j].id == rutaOg[j].id)
+                {
+                    continue;
+                }
+                else{
+                    break;
+                }
+            }
+            
+            if (j == count2)
+            {
+                // Son la misma ruta!
                 return true;
             }
         }
-        
+
     }
+    
     return false;
+
 }
 
 void sacar_nodo(vector <nodo>& lista, nodo nodo_a_sacar){
@@ -241,51 +288,100 @@ void sacar_nodo(vector <nodo>& lista, nodo nodo_a_sacar){
 
 vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo, vector<nodo>& ruta_original){
 
+    // 
+    // Este algoritmo debe buscar LA MEJOR DE TODAS LAS RUTAS para el conjunto determinado
+    // Esta diseñado para considerar cualquier tipo de nodo: Linehaul o Backhaul
+    // ruta_original contiene la ruta que lleva el vehiculo, la cual puede ser:
+        // Linehaul: solo deposito
+        // Backhaul: Deposito + nodos linehaul
+    // considera que la demanda actual del vehiculo siempre parte en 0
+
+    // Idea:
+    // Nuevo input: MODO -> 0: linehaul 1: backhaul
+        // Pensando en como "volver atras" cuando estoy en backhaul y evitar borrar el ultimo nodo de ruta_og?
+
+    // IDEA NUEVA:
+    // Hacer backtracking para obtener una ruta que sea factible y minimice las distancias entre ellos.
+    // (1) guardar esa configuracion de backtracking en rutas posibles
+    // volver un nodo atras y buscar todos los siguientes nuevamente
+        // Revisar que la ruta que estoy haciendo y encuentro factible no esta en las rutas posibles ya guardadas
+    // Si encuentro una que sea buena y cumpla con las condiciones (considerando que ya estoy casi full capacidad)
+    // REPEAT (1)
+    // de lo contrario (caso mas probable): se acabaron los nodos y no hay nada factible:
+        // alto --, eliminar nodo actual, restar demanda y distancias
+    // Desde el nuevo nodo, revisar instanciacion e instanciar el mejor que cumpla con la capacidad
+    // al momento de revisar si es factible, REPEAT (1)
+    // de lo contrario: no quedan nodos y nada factible:
+        // alto--
+
+    // Volver a hacer backtracking
+    // 
+    // Terminar cuando 
+
     float capacidad = vehiculo.capacidad;
 
     int L_actual = 0;
     int alto = 1;
 
-    float min_demanda = 10000000.0;
-    int clientes_atendidos = 0;
+    float min_demanda = 10000000.0;         // THRESHOLD PARA LA MINIMA DEMANDA DE LOS NODOS 
+    int clientes_atendidos = 0;     
 
-    vector<nodo> ruta = ruta_original;
+    vector<nodo> ruta = ruta_original;      // Copiamos la ruta original para "mover" los nodos en ella y no alterar la pasada x param
 
-    vector <tuple <float, vector<nodo>>> rutasPosibles;
+    vector <tuple <float, vector<nodo>>> rutasPosibles;     // Vector que almacena todas las rutas factibles encontradas
+    float min_distancia = 1000000000.0;     // minima distancia recorrida 
+    float distancia_actual;                 // Distancia entre nodoActual y Nodo Anterior       VARIABLE SIEMPRE
+    int distancia_calculada;                // Distancia calculada en cada iteracion            VARIABLE SIEMPRE
 
-    float min_distancia = 1000000000.0, distancia_actual;
-    int id_min;
+    // Ojo! revisar que pasa en caso de backhaul
+    float distancia_total = 0.0;            // distancia total recorrida en este viaje
+    
+    nodo nodoAnterior, nodoInstanciar;      // Nodos-variable
 
-    int distancia_calculada;
-    float distancia_total = 0.0;
-    nodo nodoAnterior, nodoInstanciar;
+    int ultimo_sacado = deposito.id;
 
+    int iteraciones = 0;
+    // Buscaremos el nodo que minimice la distancia de todas las posibles instanciaciones en cada altura
     while(alto >= 1){
+
+        
+        sleep_for(500ms);
+        iteraciones += 1;
+        cout << iteraciones << endl;
         // cout << alto << "\n";
+
+        // QUEDAN VARIABLES POR INSTANCIAR
         if (L_actual < lista.size())
         {
             nodo nodoActual = lista[L_actual];
             nodoAnterior = ruta.back();
 
-            if (esta_en_ruta(ruta, nodoActual))
-            {
-                // cout << "Ya esta en ruta el: "<< nodoActual.id <<"\n";
+            if (nodoActual.id == nodoAnterior.id) {
+                cout << "Soy Yo! jeje " << nodoActual.id << endl;
                 L_actual++;
                 continue;
             }
 
-            if (esta_en_ruta_posible(rutasPosibles, nodoActual))
-            {
-                // cout << "Ya esta en ruta posible el: "<< nodoActual.id <<"\n";
-                L_actual++;
-                continue;
-            }
-            
-
-            // cout << "entre aqui!";
-            // Aun quedan nodos por instanciar
+            // NO SUPERA LA CAPACIDAD
             if (nodoActual.demanda + vehiculo.demanda < capacidad)
             {   
+                // Condicion para probar si esta en la ruta actualmente
+                if (esta_en_ruta(ruta, nodoActual))
+                {   
+                    cout << "Ya esta en ruta el: "<< nodoActual.id <<"\n";
+                    L_actual++;
+                    continue;
+                }
+                // Condicion para probar si esta en alguna ruta posible, en la "ruta de rutas" (rutas de otros vehiculos)
+                if (esta_en_ruta_posible(rutasPosibles, nodoActual, ruta))
+                {
+                    cout << "Ya esta en ruta posible el: "<< nodoActual.id <<"\n";
+                    L_actual++;
+                    continue;
+                }
+
+                // NO ESTA EN NINGUNA RUTA, ES CONSISTENTE
+
                 // cout << "Nodo " << nodoActual.id << " entro! \n";
                 // buscamos la minima demanda posible para crear un threshold
                 if (min_demanda > nodoActual.demanda)
@@ -299,86 +395,198 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                 // si la distancia desde el nodo anterior a este nodo es menor a la conocida por otros nodos a instanciar, guardamos el id
                 if (min_distancia > distancia_calculada)
                 {   
-                    if (!esta_en_ruta(ruta, nodoActual))
+                    if (nodoActual.id != ultimo_sacado)
                     {
-                        nodoInstanciar = nodoActual;
+                        nodoInstanciar = nodoActual;    // ALMACENO EL MEJOR NODO POSIBLE PARA METERLO A LA RUTA CUANDO NO QUEDEN POR INSTANCIAR
                         // cout << "Nodo a instanciar min distancia: " << nodoInstanciar.id << endl;
-                        min_distancia = distancia_calculada;
+                        min_distancia = distancia_calculada;    // ALMACENO LA DISTANCIA MINIMA PARA SEGUIR COMPARANDO
+                    }
+                    else{
+                        cout << "Me sacaron recien :c" << endl;
                     }
                 }
                 L_actual++;
                 
-            }else{
-                // como manejo el caso en que no entre al if anterior porque la ruta este llena?
+            }
+            // DEMANDA SUPERA CAPACIDAD
+            else{
+                // aumentamos el contador para llegar al final de la lista, a ver si existe alguno...
                 L_actual++;
             }
             
         }
+
+        // NO QUEDAN VARIABLES POR INSTANCIAR
         else {
             cout << "\nNo quedan nodos por instanciar..." << "\n";
-            // No quedan nodos por instanciar
-            // Aun queda espacio en vehiculo
-            
-
+            // Aun queda espacio en vehiculo???
             if (nodoInstanciar.demanda + vehiculo.demanda < capacidad)
             {   
-                if (!esta_en_ruta(ruta, nodoInstanciar) && !esta_en_ruta_posible(rutasPosibles, nodoInstanciar)){
+                // En caso de que no este en ruta, ni ruta_posible
+                if (!esta_en_ruta(ruta, nodoInstanciar) && !esta_en_ruta_posible(rutasPosibles, nodoInstanciar, ruta)){
+                    if (nodoInstanciar.id == ultimo_sacado)
+                    {   
+                        cout << "caso raro!" << endl;
+                        // Caso: Saque el nodo recien y aun asi entro aca pq no esta en la ruta actual y no es viable
+                         alto --;                // Bajamos un nivel del arbol
+                    
+                        L_actual = 0;
+                        min_distancia = 100000000.0;
+                        // Nodo a sacar para backtrack:
+                        ultimo_sacado = ruta.back().id;
+                        cout<< "Nodo a sacar: " << ruta.back().id << endl;
+                        vehiculo.demanda -= ruta.back().demanda;
+                        nodoAnterior = ruta[ruta.size() - 2];       // penultimo elemento
+
+                        cout << "distancia_total_antes : " << distancia_total << endl;
+                        float distancia_restar = distancia(nodoAnterior, ruta.back());
+                        distancia_total -= distancia_restar;        // 
+                        cout << "distancia_restar : " << distancia_restar << endl;
+                        cout << "distancia_total : " << distancia_total << endl;
+                        ruta.pop_back();
+                        leerRuta(ruta);
+                        cout << '\n';
+                        continue;
+                    }
+                    
+                    // ES CONSISTENTE
+                    // Procedemos a guardar el nodo en la ruta y aumentar un nivel el arbol, hasta que no queden mas!
+
                     // string input;
                     // cin >> input;
                     cout << "...pero aun queda espacio!" << "\n";
                     cout << "Nodo_instanciar: " << nodoInstanciar.id << "\n";
                     cout << "Distancia entre nodos: "<< min_distancia << endl;
-                    distancia_actual = min_distancia;
-                    vehiculo.demanda += nodoInstanciar.demanda;
-                    distancia_total += min_distancia;
+                    distancia_actual = min_distancia;           // La distancia actual (de la ruta) es la minima distancia de todos los hijos del arbol
+                    vehiculo.demanda += nodoInstanciar.demanda; // sumamos la demanda del vehiculo para agregar el nodo a la ruta
+                    distancia_total += min_distancia;           // Distancia total = Minima distancia
                     cout << "Distancia total: " << distancia_total << "\n";
                     cout << "Demanda Vehiculo: " << vehiculo.demanda << "\n";
-                    ruta.push_back(nodoInstanciar);
-                    alto++;
+                    ruta.push_back(nodoInstanciar);             // Agregamos el valor del nodo a laa ruta
+                    leerRuta(ruta);
+                    alto++;                                     // un nivel mas en el arbol!!!
 
                     // nodoInstanciar = deposito;
-                    L_actual = 0;    // Comenzamos la siguiente instanciacion desde el siguiente valor al instanciado en la lista!
+                    L_actual = 0;                               // Reiniciamos el contador de posicion de la lista
+                    cout << "min_distancia: " << min_distancia << endl;
                     cout << "alto arbol de busqueda: " << alto << "\n\n";
+                    cout << "min_dist reset!" << endl;
                     min_distancia = 100000000.0;  // Reiniciamos el contador de distancia minima para la siguiente instanciacion, en un nuevo nivel del arbol
-                    min_demanda = 10000000.0;
-                    continue;
+                    
+                    
+                    // CREO QUE NO HACE FALTA REINICIAR LA MINIMA DEMANDA CUANDO AGREGO UN NODO A LA RUTA, ES UN TRESHOLD NO?
+                    // min_demanda = 10000000.0;     // Se reinicia la minima demanda
+
+
+                    continue;                       // Subimos de nivel!!!!!!!!
                 }
+                // Caso contrario: NODO EN LA RUTA
                 else{
                     cout<< "El nodo esta en la ruta!!!!" << endl;
-
+                    cout << "Nodo: " << nodoInstanciar.id << endl;
+                    
+                    // CASO: cuando ya no quedan nodos por instanciar, y el unico posible (mejor) es el mismo nodo origen, pero aun hay capacidad!
+                    
                     leerRuta(ruta);
-                    // Se almacena la solucion con su distancia total
-                    tuple <float, vector<nodo>> resultado;
-                    resultado = make_tuple(distancia_total, ruta);
-                    rutasPosibles.push_back(resultado);
-                    cout << "Distancia total: " << distancia_total << "\n";
-                    cout << "Demanda Vehiculo: " << vehiculo.demanda << "\n";
-                    cout << "Agregado a rutas posibles!" << endl;
+
+                    // No deberiamos agregarlo como ruta posible... ya que no entrega nada util!
+
+                    // // Se almacena la solucion con su distancia total
+                    // tuple <float, vector<nodo>> resultado;
+                    // resultado = make_tuple(distancia_total, ruta);
+                    // rutasPosibles.push_back(resultado);
+                    // cout << "Distancia total: " << distancia_total << "\n";
+                    // cout << "Demanda Vehiculo: " << vehiculo.demanda << "\n";
+                    // cout << "Agregado a rutas posibles!" << endl;
 
                     // string xd;
                     // cin >> xd;
 
                     // Se reinician los parametros para volver a iniciar backtracking.
-                    alto --;
-                    distancia_total -= distancia_actual;
+                    alto --;                // Bajamos un nivel del arbol
+                    
                     L_actual = 0;
                     min_distancia = 100000000.0;
-                    min_demanda = 10000000.0;
                     // Nodo a sacar para backtrack:
+                    ultimo_sacado = ruta.back().id;
+                    cout<< "Nodo a sacar: " << ruta.back().id << endl;
+                    vehiculo.demanda -= ruta.back().demanda;
+                    nodoAnterior = ruta[ruta.size() - 2];       // penultimo elemento
+
+                    cout << "distancia_total_antes : " << distancia_total << endl;
+                    float distancia_restar = distancia(nodoAnterior, ruta.back());
+                    distancia_total -= distancia_restar;        // 
+                    cout << "distancia_restar : " << distancia_restar << endl;
+                    cout << "distancia_total : " << distancia_total << endl;
+                    ruta.pop_back();
+                    leerRuta(ruta);
+                    cout << '\n';
+
+                    // Que hacemos aca?!?!?!
+                    continue;
+                }
+                
+            }
+            //Caso: No queda espacio en el vehiculo! ¿Deberia terminar la ruta?
+            else{
+                // Capacidad maxima, deberiamos terminar la ruta??
+                // Backtracking?!
+
+                cout << "No queda espacio en vehiculo! \n";
+                cout << "Demanda: " << vehiculo.demanda << endl;
+                cout << "capacidad: " << capacidad << endl;
+                cout << "min_demanda: "<< min_demanda << endl;
+                
+                // Si no queda espacio y la diferencia es posible suplir por el nodo con menor demanda
+                if (capacidad - vehiculo.demanda > min_demanda )
+                {
+                    cout << "Caso: queda espacio suplible por min_demanda" << endl;
+                    /* ir atras dos nodo en la ruta y continuar */
+                    alto --;
+                    nodoAnterior = ruta[ruta.size() - 2];       // penultimo elemento
+
+                    cout << "distancia_total_antes : " << distancia_total << endl;
+                    float distancia_restar = distancia(nodoAnterior, ruta.back());
+                    distancia_total -= distancia_restar;        // 
+                    cout << "distancia_restar : " << distancia_restar << endl;
+                    cout << "distancia_total : " << distancia_total << endl;
+                    // Para el calculo de las distancias, restamos el ultimo de la ruta con el nodo anterior
+                    
+                    L_actual = 0;
+                    cout << "min_dist reset!" << endl;
+                    // Nodo a sacar para backtrack:
+                    ultimo_sacado = ruta.back().id;
                     cout<< "Nodo a sacar: " << ruta.back().id << endl;
                     vehiculo.demanda -= ruta.back().demanda;
                     ruta.pop_back();
                     leerRuta(ruta);
-                    cout << '\n';
+
+
+                    // nodoAnterior = ruta[ruta.size() - 2];       // penultimo elemento
+
+                    // cout << "distancia_total_antes : " << distancia_total << endl;
+                    // distancia_restar = distancia(nodoAnterior, ruta.back());
+                    // distancia_total -= distancia_restar;        // 
+                    // cout << "distancia_restar : " << distancia_restar << endl;
+                    // cout << "distancia_total : " << distancia_total << endl;
+                    // // Para el calculo de las distancias, restamos el ultimo de la ruta con el nodo anterior
                     
+                    // L_actual = 0;
+                    // min_distancia = 100000000.0;
+                    // // Nodo a sacar para backtrack:
+                    // ultimo_sacado = ruta.back().id
+                    // cout<< "Nodo a sacar: " << ruta.back().id << endl;
+                    // vehiculo.demanda -= ruta.back().demanda;
+                    // ruta.pop_back();
+                    // leerRuta(ruta);
+
+
+                    cout << '\n';
+
+                    continue;       // Backtracking!
+
                 }
                 
-            }
-            //Caso: No queda espacio en el vehiculo!
-            else{
-                cout << "No queda espacio en vehiculo! \n";
-                cout << "Demanda: " << vehiculo.demanda << endl;
-                cout << "capacidad: " << capacidad << endl;
 
 
                 leerRuta(ruta);
@@ -388,17 +596,27 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                 resultado = make_tuple(distancia_total, ruta);
                 rutasPosibles.push_back(resultado);
                 cout << "Distancia total: " << distancia_total << "\n";
+                cout << "min_distancia: " << min_distancia << endl;
                 cout << "Agregado a rutas posibles!" << endl;
 
                 // string xd;
                 // cin >> xd;
 
-                // Se reinician los parametros para volver a iniciar backtracking.
+                // SE HACE BACKTRACKING, PARA BUSCAR UNA NUEVA RUTA POSIBLE, RECORDAR QUE NO SOLO BUSCAMOS FACTIBLE SINO QUE SEA LA MEJOR
                 alto --;
-                distancia_total -= distancia_actual;
+                nodoAnterior = ruta[ruta.size() - 2];       // penultimo elemento
+
+                cout << "distancia_total_antes : " << distancia_total << endl;
+                float distancia_restar = distancia(nodoAnterior, ruta.back());
+                distancia_total -= distancia_restar;        // 
+                cout << "distancia_restar : " << distancia_restar << endl;
+                cout << "distancia_total : " << distancia_total << endl;
+                // Para el calculo de las distancias, restamos el ultimo de la ruta con el nodo anterior
+                
                 L_actual = 0;
+                cout << "min_dist reset!" << endl;
                 min_distancia = 100000000.0;
-                min_demanda = 10000000.0;
+                //min_demanda = 10000000.0;
                 // Nodo a sacar para backtrack:
                 cout<< "Nodo a sacar: " << ruta.back().id << endl;
                 vehiculo.demanda -= ruta.back().demanda;
@@ -406,16 +624,19 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                 leerRuta(ruta);
                 cout << '\n';
 
-                continue;
+                continue;       // Backtracking!
             }
             
-            
+            // no entiendo bien que hice aca, porque tendria que sacar 2 nodos al mismo tiempo?
+
+            // Si la capacidad del vehiculo excede la demanda del vehiculo + minima demanda (aun queda espacio) despues de haber sacado 1
             if (capacidad - vehiculo.demanda > min_demanda)
             {   
                 cout << "Nada por instanciar..." << "\n";
                 alto --;
                 cout << "alto: " << alto << endl;
                 L_actual = 0;
+                cout << "min_dist reset!" << endl;
                 min_demanda = 10000000.0;
                 min_distancia = 100000000.0;
                 distancia_total -= distancia_actual;
@@ -445,8 +666,12 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
 }
 
 
-vector <vector <nodo>> Rutas_Vehiculos(int maxTiempo, vector <nodo> listaLinehaul, vector<nodo> listaBackhaul, nodo deposito, vector<Vehiculo> listaVehiculos){
+    // ================================================================================ //
+    // funcion para ejecutar backtracking Q veces (la cantidad de vehiculos)            //
+    // para determinar la mejor ruta para cada uno, reduciendo el espacio de busqueda   //
+    // ================================================================================ //
 
+vector <vector <nodo>> Rutas_Vehiculos(int maxTiempo, vector <nodo> listaLinehaul, vector<nodo> listaBackhaul, nodo deposito, vector<Vehiculo> listaVehiculos){
 
 
     // Solucion final
@@ -454,7 +679,7 @@ vector <vector <nodo>> Rutas_Vehiculos(int maxTiempo, vector <nodo> listaLinehau
     // constantes para la iteracion
     
     int Q = listaVehiculos.size();
-    // int Q = 1;
+    Q = 1;
     int i = 0;
     unsigned t0, t1;
     t0 = clock();
@@ -468,6 +693,10 @@ vector <vector <nodo>> Rutas_Vehiculos(int maxTiempo, vector <nodo> listaLinehau
         leerRuta(ruta);
         vector<nodo> rutaL = Backtracking(listaLinehaul, deposito, vehiculo, ruta);
         leerRuta(rutaL);
+
+        string input;
+        cin >> input;
+
         // eliminar los nodos de la ruta en linehaul
 
         for (int j = 0; j < rutaL.size(); j++)
