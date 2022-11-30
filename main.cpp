@@ -197,11 +197,10 @@ void leerRuta (vector <nodo> ruta){
     
 }
 
-void deleteOutput(string nombreArchivo, string extension){
+void deleteOutput(string nombreArchivo, string extension, string pre){
     nombreArchivo.erase(0, 11);
     nombreArchivo.erase(nombreArchivo.size() - 4, 4);
 
-    string pre = "out/";
     string file = pre + nombreArchivo + extension;
 
     try
@@ -246,7 +245,7 @@ void writeArchivo (float dist, vector<nodo> ruta, string nombreArchivo, float de
     nombreArchivo.erase(nombreArchivo.size() - 4, 4);
 
     string extension = "_posibles.out";
-    string pre = "out/";
+    string pre = "out/posibles/";
     string file = pre + nombreArchivo + extension;
     cout << "Escribiendo output en: " << file << endl;
     ofstream myfile (file, ios::app);
@@ -298,7 +297,7 @@ void writeOutput(string nombreArchivo, vector <vector <nodo>> rutas, vector<Vehi
     nombreArchivo.erase(nombreArchivo.size() - 4, 4);
 
     string extension = ".out";
-    string pre = "out/";
+    string pre = "out/out/";
     string file = pre + nombreArchivo + extension;
     cout << "Escribiendo output en: " << file << endl;
     
@@ -473,36 +472,6 @@ int sacar_nodo(vector <nodo>& lista, nodo nodo_a_sacar){
 
 vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo, vector<nodo>& ruta_original, string nombreArchivo, string modo, int no_backhaul){
 
-    // 
-    // Este algoritmo debe buscar LA MEJOR DE TODAS LAS RUTAS para el conjunto determinado
-    // Esta diseñado para considerar cualquier tipo de nodo: Linehaul o Backhaul
-    // ruta_original contiene la ruta que lleva el vehiculo, la cual puede ser:
-        // Linehaul: solo deposito
-        // Backhaul: Deposito + nodos linehaul
-    // considera que la demanda actual del vehiculo siempre parte en 0
-
-    // Idea:
-    // Nuevo input: MODO -> 0: linehaul 1: backhaul
-        // Pensando en como "volver atras" cuando estoy en backhaul y evitar borrar el ultimo nodo de ruta_og?
-
-    // IDEA NUEVA:
-    // Hacer backtracking para obtener una ruta que sea factible y minimice las distancias entre ellos.
-    // (1) guardar esa configuracion de backtracking en rutas posibles
-    // volver un nodo atras y buscar todos los siguientes nuevamente
-        // Revisar que la ruta que estoy haciendo y encuentro factible no esta en las rutas posibles ya guardadas
-    // Si encuentro una que sea buena y cumpla con las condiciones (considerando que ya estoy casi full capacidad)
-    // REPEAT (1)
-    // de lo contrario (caso mas probable): se acabaron los nodos y no hay nada factible:
-        // alto --, eliminar nodo actual, restar demanda y distancias
-    // Desde el nuevo nodo, revisar instanciacion e instanciar el mejor que cumpla con la capacidad
-    // al momento de revisar si es factible, REPEAT (1)
-    // de lo contrario: no quedan nodos y nada factible:
-        // alto--
-
-    // Volver a hacer backtracking
-    // 
-    // Terminar cuando 
-
     float capacidad = vehiculo.capacidad;
 
     int L_actual = 0;
@@ -533,7 +502,7 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
     while(alto >= 1){
 
         // condicion de termino
-        if (iteraciones > 2999)
+        if (iteraciones > 9999)
         {
             cout << "Max Iteraciones!!!" << endl;
             //alto = -1;
@@ -684,7 +653,7 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                     cout << "...pero aun queda espacio!" << "\n";
                     cout << "Nodo_instanciar: " << nodoInstanciar.id << "\n";
                     float distancia_instanciar = distancia(ruta.back(), nodoInstanciar );
-                    cout << "Distancia entre nodos: "<< distancia_instanciar << endl;
+
 
                     distancia_actual = distancia_instanciar;           // La distancia actual (de la ruta) es la minima distancia de todos los hijos del arbol
                     vehiculo.demanda += nodoInstanciar.demanda; // sumamos la demanda del vehiculo para agregar el nodo a la ruta
@@ -698,8 +667,6 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                     // nodoInstanciar = deposito;
                     L_actual = 0;                               // Reiniciamos el contador de posicion de la lista
                     cout << "min_distancia: " << min_distancia << endl;
-                    cout << "alto arbol de busqueda: " << alto << "\n\n";
-                    cout << "min_dist reset!" << endl;
                     min_distancia = 100000000.0;  // Reiniciamos el contador de distancia minima para la siguiente instanciacion, en un nuevo nivel del arbol
                     
                     
@@ -718,13 +685,28 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                     
                     leerRuta(ruta);
 
-                    if (lista.size() == 1 && modo == "B")
-                    {   
-                        ruta.push_back(deposito);
+                    // La cantidad de nodos instanciados en esta ruta es == lista.size()
+
+                    if (lista.size() == alto-1)
+                    {
+                        //ruta.push_back(deposito);
                         distancia_total = sumarDistancias(ruta);
                         tuple <float, vector<nodo>> resultado;
                         resultado = make_tuple(distancia_total, ruta);
                         cout << "Me estoy saliendo!!!" << endl;
+                        rutasPosibles.push_back(resultado);
+                        
+                    }
+                    
+
+                    if (lista.size() == 1 && modo == "B")
+                    {   
+                        //ruta.push_back(deposito);
+                        distancia_total = sumarDistancias(ruta);
+                        tuple <float, vector<nodo>> resultado;
+                        resultado = make_tuple(distancia_total, ruta);
+                        cout << "Me estoy saliendo!!! MODO B" << endl;
+                        leerRuta(ruta);
                         rutasPosibles.push_back(resultado);
                         break;
                     }
@@ -733,13 +715,13 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                         distancia_total = sumarDistancias(ruta);
                         tuple <float, vector<nodo>> resultado;
                         resultado = make_tuple(distancia_total, ruta);
-                        cout << "Me estoy saliendo!!!" << endl;
+                        cout << "Me estoy saliendo!!!2" << endl;
                         rutasPosibles.push_back(resultado);
                         writeArchivo(distancia_total, ruta, nombreArchivo, capacidad - vehiculo.demanda);
                         break;
                     }
                     
-
+                    
 
                     // Se reinician los parametros para volver a iniciar backtracking.
                     alto --;                // Bajamos un nivel del arbol
@@ -895,9 +877,9 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
         
         vector <nodo> rutaF = get<1>(rutasPosibles[i]);
         
-        if (modo == "B" || no_backhaul)
+        if (modo == "B")
         {
-            // Agregar el deposito
+            //Agregar el deposito
             rutaF.push_back(deposito);
         }
         
@@ -905,7 +887,6 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
         float demanda_calc = sumarDemandas(rutaF);
 
 
-        
 
         
         
@@ -1026,6 +1007,7 @@ vector <vector <nodo>> Rutas_Vehiculos(int maxTiempo, vector <nodo> listaLinehau
         }else{
             no_backhaul = 1;
             rutaFinal = rutaL;
+            rutaFinal.push_back(deposito);
         }
 
         rutas.push_back(rutaFinal);
@@ -1059,8 +1041,8 @@ int main(int arcg, char* argv[]) {
     
     string nombreArchivo = argv[1];
 
-    deleteOutput(nombreArchivo, ".out");
-    deleteOutput(nombreArchivo, "_posibles.out");
+    deleteOutput(nombreArchivo, ".out", "out/out/");
+    deleteOutput(nombreArchivo, "_posibles.out", "out/posibles/");
     
     
     // contador de tiempo!
