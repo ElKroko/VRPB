@@ -272,7 +272,27 @@ RutaVehiculo2 DistanciaRecorrida DemandaLinehaul DemandaBackhaul
 ...
 =============================================
 */
-void writeOutput(string nombreArchivo, vector <vector <nodo>> rutas, vector<Vehiculo> listaVehiculos, int clientes){
+
+ int findDemanda(vector <nodo> ruta, vector<nodo> lista){
+    float demanda = 0.0;
+
+    // Buscar el item dentro de la lista, si == demanda ++
+    for (int i = 0; i < lista.size(); i++)
+    {   
+        for (int j = 0; j < ruta.size(); j++)
+        {
+            if (lista[i].id == ruta[j].id)
+            {      
+                demanda += lista[i].demanda;
+
+            }
+        }
+    }
+
+    return demanda;
+ }
+
+void writeOutput(string nombreArchivo, vector <vector <nodo>> rutas, vector<Vehiculo> listaVehiculos, int clientes, vector<nodo> Linehauls, vector<nodo> Backhauls, auto t0){
     // Eliminamos "/instancias" y ".txt"
     nombreArchivo.erase(0, 11);
     nombreArchivo.erase(nombreArchivo.size() - 4, 4);
@@ -287,6 +307,9 @@ void writeOutput(string nombreArchivo, vector <vector <nodo>> rutas, vector<Vehi
     // Iterar entre rutas para obtener cada ruta y sus distancia, demanda_L y demanda_B
     vector <tuple <vector <nodo> , float , int , int  >> rutas_imprimir;
     
+    leerLista(Linehauls);
+    cout << "\n" << "Backhauls: " << endl;
+    leerLista(Backhauls);
 
     for (int i = 0; i < rutas.size(); i++)
     {   
@@ -296,12 +319,11 @@ void writeOutput(string nombreArchivo, vector <vector <nodo>> rutas, vector<Vehi
         // Distancia Recorrida
         float dist = sumarDistancias(ruta);
         // Demanda Linehaul
-        int demL = listaVehiculos[i].demandaLinehaul;
+        int demL = findDemanda(ruta, Linehauls);
         //myfile <<  << " ";
         // Demanda Backhaul
-        int demB = listaVehiculos[i].demandaBackhaul;
+        int demB = findDemanda(ruta, Backhauls);
         //myfile <<  << endl;
-        cout << demL << endl;
 
         tuple <vector <nodo>, float, int, int> ruta_impr = make_tuple(ruta, dist, demL, demB);
         
@@ -328,8 +350,12 @@ void writeOutput(string nombreArchivo, vector <vector <nodo>> rutas, vector<Vehi
     myfile << cant_vehiculos << " ";
 
     // tiempoDeEjecucion!!!
-    unsigned tiempo = 100;
-    myfile << tiempo;
+    auto t1 = system_clock::now();
+    duration<float, milli> duration = t1 - t0;
+
+    auto tiempo = duration.count() * milliseconds::period::num / milliseconds::period::den;
+
+    myfile << tiempo << "[s]";
 
     myfile << endl;
 
@@ -510,7 +536,7 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
         if (iteraciones > 2999)
         {
             cout << "Max Iteraciones!!!" << endl;
-            alto = -1;
+            //alto = -1;
             break;
         }
         
@@ -580,7 +606,7 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
 
                 // si la distancia desde el nodo anterior a este nodo es menor a la conocida por otros nodos a instanciar, guardamos el id
 
-                //if (min_distancia > distancia_calculada){   
+                if (min_distancia > distancia_calculada){   
                     if (nodoActual.id != ultimo_sacado)
                     {
                         nodoInstanciar = nodoActual;    // ALMACENO EL MEJOR NODO POSIBLE PARA METERLO A LA RUTA CUANDO NO QUEDEN POR INSTANCIAR
@@ -590,7 +616,7 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                     else{
                         //cout << "Me sacaron recien :c" << endl;
                     }
-                //}
+                }
                 L_actual++;
                 
             }
@@ -1002,9 +1028,6 @@ vector <vector <nodo>> Rutas_Vehiculos(int maxTiempo, vector <nodo> listaLinehau
             rutaFinal = rutaL;
         }
 
-        
-        
-
         rutas.push_back(rutaFinal);
         i++;
     
@@ -1025,7 +1048,7 @@ int main(int arcg, char* argv[]) {
         exit(1);
     }
     
-
+    auto t0 = system_clock::now();
 
     vector <nodo> listaLinehaul;
     vector <nodo> listaBackhaul;
@@ -1044,6 +1067,9 @@ int main(int arcg, char* argv[]) {
     int maxTiempo = 180;
 
     nodo deposito = lecturaArchivos(argv, listaLinehaul, listaBackhaul, listaVehiculos);
+
+    vector<nodo> Linehauls = listaLinehaul;
+    vector<nodo> Backhauls = listaBackhaul;
 
     clientes_og = listaBackhaul.size() + listaLinehaul.size();
     clientes = clientes_og;
@@ -1067,7 +1093,11 @@ int main(int arcg, char* argv[]) {
 
     cout << clientes_og << endl;
 
-    writeOutput(nombreArchivo, rutas, listaVehiculos, clientes_og);
+    
+
+
+
+    writeOutput(nombreArchivo, rutas, listaVehiculos, clientes_og, Linehauls, Backhauls, t0);
 
 
     cout << "rutas finales para los vehiculos!" << endl;
