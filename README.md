@@ -1,5 +1,5 @@
 ## Primera Implementacion: VRPB + BT
-Codigo fuente para segundo informe VRPB, escrito en c++.
+Codigo fuente para VRPB, escrito en c++.
 
 Vicente Perelli - ROL: 201756594-2
 
