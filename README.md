@@ -1,5 +1,5 @@
 ## Primera Implementacion: VRPB + BT
-Codigo fuente para VRPB, escrito en c++.
+Codigo fuente para VRPB, escrito en C++.
 
 Vicente Perelli - ROL: 201756594-2
 
@@ -18,10 +18,8 @@ Para limpiar el directorio de archivos compilados:
 
 
 #### Consideraciones
-Para ejecutar el codigo correctamente es necesario utilizar la version C++17. 
+Para ejecutar el codigo correctamente es necesario utilizar la version C++17, esta version de compilador esta especificada dentro del makefile.
+
+El codigo compila, y ejecuta el algoritmo completamente para 41/62 instancias. Al ejecutar el codigo en terminal se muestra como va construyendo las rutas de manera iterativa, y ademas de los archivos formalmente solicitados como salida del programa, se ha creado una carpeta donde para cada instancia se imprimen todas las rutas generadas consideradas como factibles para el problema (posibles/instancia_posibles.out).
 
 
-
-
-El codigo compila, pero no ejecuta el algoritmo completamente dado que tuve un problema con los calculos de distancias totales al momento de hacer backtracking, y por tiempo no alcance a terminarlo. 
-De todas formas, al ejecutar el codigo en terminal se muestra como va construyendo las rutas de manera iterativa, haciendo backtracking en aquellos nodos donde no se encuentran mas nodos por instanciar.
