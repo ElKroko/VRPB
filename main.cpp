@@ -14,30 +14,6 @@ using namespace std;
 using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono; // nanoseconds, system_clock, seconds
 
-
-/*
-=========== Formato de Entrada ==============
-# Nodes
-TipoDeNodo (0=depot, 1=linehaul, 2=backhaul) IDNodo CoordX CoordY
-...
-# Vehiculos Capacidad
-IDNodo Demanda
-...
-=============================================
-
-nombre_instancia.out (Si lee GA1.txt => GA1.out)
-============= Formato de Salida =============
-CalidadDeSolucion #ClientesAtendidos #Vehiculos TiempoDeEjecucion [s]
-RutaVehiculo1 DistanciaRecorrida DemandaLinehaul DemandaBackhaul
-RutaVehiculo2 DistanciaRecorrida DemandaLinehaul DemandaBackhaul
-...
-=============================================
-
-Tecnicas completas deben mostrar las rutas que se tengan hasta el momento de parada del algoritmo.
-Sea por evento por consola, o limite de tiempo definido.
-
-
-*/
 // struct para representar un nodo, con tipo, coordenadas y demanda.
 struct nodo{
     int id;
@@ -45,7 +21,6 @@ struct nodo{
     float x;
     float y;
     float demanda = 0.0;
-    int visitado = 0;
 };
 
 // struct para representar un vehiculo.
@@ -64,13 +39,6 @@ struct Vehiculo {
         capacidad = b;
     }
 };
-
-
-// struct para hacer variable?!
-// struct variable {
-//     auto nodo;
-//     bool estaenrutaposible;
-// };
 
 
 // Funcion para calcular distancia entre 2 nodos de forma euclideana.
@@ -575,7 +543,7 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
 
                 // si la distancia desde el nodo anterior a este nodo es menor a la conocida por otros nodos a instanciar, guardamos el id
 
-                if (min_distancia > distancia_calculada){   
+                //if (min_distancia > distancia_calculada){   
                     if (nodoActual.id != ultimo_sacado)
                     {
                         nodoInstanciar = nodoActual;    // ALMACENO EL MEJOR NODO POSIBLE PARA METERLO A LA RUTA CUANDO NO QUEDEN POR INSTANCIAR
@@ -585,7 +553,7 @@ vector<nodo> Backtracking(vector <nodo> lista, nodo deposito, Vehiculo& vehiculo
                     else{
                         //cout << "Me sacaron recien :c" << endl;
                     }
-                }
+                //}
                 L_actual++;
                 
             }

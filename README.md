@@ -9,6 +9,9 @@ Para la correcta ejecucion del programa, es necesario:
 - Ejecutar el archivo `./main` pasando como argumento la ruta de una instancia a ejecutar, por ejemplo:
   - `./main instancias/GA1.txt`
 
+Para probar todas las instancias existentes en la carpeta `/instancias`, se ha creado un :
+- `./runall.sh`
+
 Para limpiar el directorio de archivos compilados:
 - `make clean`
 

@@ -1,4 +1,4 @@
 compile:
-	g++ main.cpp -o main -Wall
+	g++ -std=c++17 main.cpp -o test 
 clean:
 	rm main
